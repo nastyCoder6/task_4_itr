@@ -5,41 +5,96 @@ import numpy as np
 import pandas as pd
 import yaml
 
-BASE_DIR = Path(__file__).parent.parent
+BASE_DIR = Path(__file__).parent
 EUR_TO_USD = 1.2
+STORE = "STORE1"
 
 
-def read_file():  # TBC
-    pass
+# to sepparate into 3 parts + pipeline
+class DataProccessor:
+    def __init__(self) -> None:
+        pass
 
+    def load_file(self, file_path):
+        path = Path(file_path)
+        ext = path.suffix.lower()
 
-# STORE 1
+        readers = {
+            ".csv": pd.read_csv,
+            ".xlsx": pd.read_excel,
+            ".xls": pd.read_excel,
+            ".json": pd.read_json,
+            ".parquet": pd.read_parquet,
+            ".xml": pd.read_xml,
+        }
+
+        if ext in readers:
+            return readers[ext](path)
+
+        elif ext in [".yaml", ".yml"]:
+            with open(path, "r") as f:
+                data = yaml.safe_load(f)
+            return pd.DataFrame(data)
+
+        else:
+            raise ValueError(f"Unsupported file ext.: {ext}")
+
+    def format_books(self, books):
+        clean_books = books.dropna().drop_duplicates()
+        clean_books[":unique_authors"] = clean_books[":author"].apply(
+            lambda x: frozenset(author.strip() for author in x.split(","))
+        )
+
+        sorted_books = clean_books.sort_values(
+            by=":unique_authors", key=lambda column: column.map(lambda x: tuple(x))
+        )
+        return sorted_books
+
+    def format_users():
+        pass
+
+    def format_orders(self, orders):
+        orders = orders.drop_duplicates()
+        pass
+
+    def get_top_revenue():
+        pass
+
+    def get_unique_users():
+        pass
+
+    def get_unique_authors(self, books):
+        return books[":unique_authors"].nunique()
+
+    def get_top_author():
+        pass
+
+    def get_top_buyer():
+        pass
+
+    def get_revenue_chart(self, orders):
+        return orders.groupby("date")["paid_price"].sum().sort_values(ascending=False)
+
 
 # -- BOOKS
 
-with open(BASE_DIR / "data" / "STORE1" / "books.yaml", "r") as file:
-    loaded_file = yaml.safe_load(file)
-books = pd.DataFrame(loaded_file)
-books = books.dropna().drop_duplicates()
 
+proccessor = DataProccessor()
+path = BASE_DIR / "data" / STORE
 
-books[":unique_authors"] = books[":author"].apply(
-    lambda x: frozenset(author.strip() for author in x.split(","))
-)
+books = proccessor.load_file(path / "books.yaml")
+orders = proccessor.load_file(path / "orders.parquet")
+users = proccessor.load_file(path / "users.csv")
 
-books = books.sort_values(
-    by=":unique_authors", key=lambda column: column.map(lambda x: tuple(x))
-)
+formatted_books = proccessor.format_books(books)
+formatted_orders = proccessor.format_books(orders)
+formatted_users = proccessor.format_books(users)
 
-print()
-print(f"The number of unique authors: {books[":unique_authors"].nunique()}")
+unique_authors = proccessor.get_unique_authors(formatted_books)
+print(f"The number of unique authors: {unique_authors}")
 
 # -- ORDERS
 
-orders = pd.read_parquet(BASE_DIR / "data" / "STORE1" / "orders.parquet")
-orders = orders.drop_duplicates()
-
-# I leave "shipping" column for future usage - 25% of missing data
 
 # unit_price fixing
 
@@ -83,12 +138,9 @@ orders["month"] = orders["timestamp"].dt.month
 orders["year"] = orders["timestamp"].dt.year
 orders["date"] = orders["timestamp"].dt.date
 
-daily_revenue = orders.groupby("date")["paid_price"].sum().sort_values(ascending=False)
 
-# print(daily_revenue.head(5))
 # -- USERS
 
-users = pd.read_csv(BASE_DIR / "data" / "STORE1" / "users.csv")
 users = users.drop_duplicates()
 
 # phone fixing
@@ -176,12 +228,12 @@ print(f"Top customer: {top_customer_name}, as: {user_id_list}")
 
 # PLOT
 
-x = list(daily_revenue.sort_index().keys())
-y = list(daily_revenue.sort_index())
+# x = list(daily_revenue.sort_index().keys())
+# y = list(daily_revenue.sort_index())
 
 
-fig, ax = plt.subplots()
+# fig, ax = plt.subplots()
 
-ax.plot(x, y)
+# ax.plot(x, y)
 
 # plt.show()
