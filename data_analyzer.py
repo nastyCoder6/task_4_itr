@@ -49,3 +49,7 @@ class DataAnalyzer:
             .round(2)
             .sort_values(ascending=False)
         )
+
+    @staticmethod
+    def filer_df(df, column, value):
+        return df[df[column] == value]

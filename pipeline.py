@@ -25,7 +25,10 @@ class DataPipeline:
             "top_author": ", ".join(self.analyzer.get_top_author(books, orders)),
             "top_customer": self.analyzer.get_top_customer(users, orders),
             "total_unique_users": users["unique_user_id"].nunique(),
-            "top_5_revenue": self.analyzer.get_revenue(orders).head(5),
+            "top_5_revenue": self.analyzer.get_revenue(orders)
+            .head(5)
+            .to_frame()
+            .style.format({"paid_price": "${}"}),
             "daily_revenue": self.analyzer.get_revenue(orders),
         }
 
