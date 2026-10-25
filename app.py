@@ -51,10 +51,15 @@ with tab3:
 
 st.divider()
 st.subheader("Assistant Chat")
-st.markdown("Dynamically access source data for a given store and filter them.")
+st.markdown(
+    """
+    Dynamically access source data for a given store and filter them.\n
+    Usability limited to displaying source datasets and basic filtering of a ["dataset_name", "column_name", "value"] structure.
+"""
+)
 if prompt := st.chat_input("Ask for data (e.g., 'Show me orders from 2025')..."):
     with st.chat_message("user"):
-        st.write(prompt)
+        st.write(f"User: {prompt}")
     with st.chat_message("assistant"):
         with st.status("Proccessing data...", state="running", expanded=True):
             st.write(agent.process_query(prompt))

@@ -12,10 +12,15 @@ class DataCleaner:
         clean[":unique_authors"] = clean[":author"].apply(
             lambda x: frozenset(author.strip() for author in x.split(","))
         )
-        sorted_books = clean.sort_values(
-            by=":unique_authors", key=lambda column: column.map(lambda x: tuple(x))
+        years = pd.to_numeric(clean[":year"], errors="coerce")
+        clean[":year"] = np.where(
+            years.isna() | (years < 1000), "Unknown", clean[":year"]
         )
-        return sorted_books
+        clean[":publisher"] = np.where(
+            clean[":publisher"].str.len() <= 1, "Unknown", clean[":publisher"]
+        )
+
+        return clean
 
     def clean_orders(self, orders):
         clean = orders.drop_duplicates().copy()
@@ -61,7 +66,12 @@ class DataCleaner:
         clean["phone"] = clean["phone"].str.replace(r"\D", "", regex=True)
         clean["unique_user_id"] = 0
 
-        # Grouping to find duplicates
+        clean["address"] = np.where(
+            clean["address"].isna() | (clean["address"].str.len() <= 1),
+            "Unknown",
+            clean["address"],
+        )
+
         group_no_email = clean.groupby(["name", "address", "phone"]).groups
         dup_no_email = [list(val) for val in group_no_email.values() if len(val) > 1]
 

@@ -24,11 +24,11 @@ class DataAgent:
                     },
                     "column_name": {
                         "type": "string",
-                        "description": "The exact name of the column to filter on. Valid columns depend on the dataset chosen. For 'books': [':id', ':title', ':author', ':genre', ':publisher', ':year', ':unique_authors']. For 'orders': ['id', 'user_id', 'book_id', 'quantity', 'unit_price', 'timestamp', 'shipping', 'currency', 'unit_price_USD', 'paid_price', 'day', 'month', 'year', 'date']. For 'users': ['id', 'name', 'address', 'phone', 'email', 'unique_user_id'].",
+                        "description": "The exact name of the column to filter on (always map to given description). Depend on the dataset chosen. For 'books': [':id', ':title', ':author', ':genre', ':publisher', ':year', ':unique_authors']. For 'orders': ['id', 'user_id', 'book_id', 'quantity', 'unit_price', 'timestamp', 'shipping', 'currency', 'unit_price_USD', 'paid_price', 'day', 'month', 'year', 'date']. For 'users': ['id', 'name', 'address', 'phone', 'email', 'unique_user_id'].",
                     },
                     "value": {
                         "type": "string",
-                        "description": "The specific value to search for within the selected column.",
+                        "description": 'The specific value to search for within the selected column. If the value is not numeric then always capitalize the word, for example: "unknown" into "Unknown" or "john doe" into "John Doe"',
                     },
                 },
                 "required": ["dataset_name", "column_name", "value"],
@@ -45,7 +45,7 @@ class DataAgent:
                     "dataset_name": {
                         "type": "string",
                         "enum": ["books", "orders", "users"],
-                        "description": "The name of the dataset to filter.",
+                        "description": "The name of the dataset.",
                     }
                 },
                 "required": ["dataset_name"],
