@@ -114,6 +114,7 @@ class DataAgent:
             system_instruction="""
                                 You are a data analysis assistant. You have access to the following pandas DataFrames.
                                 Use this schema to write valid queries and code. Note that 'books' columns start with a colon.
+                                For uniquess related queries always refer to ':unique_authors' and 'unique_user_id'.
 
                                 1. 'books':
                                 - ':id' (int)
