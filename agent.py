@@ -1,4 +1,7 @@
+import json
+
 import pandas as pd
+import streamlit as st
 from dotenv import load_dotenv
 from google import genai
 
@@ -51,8 +54,45 @@ class DataAgent:
                 "required": ["dataset_name"],
             },
         }
+        self.code_declaration = {
+            "type": "function",
+            "name": "execute_code",
+            "description": (
+                "Executes Python code locally to query and analyze DataFrames. "
+                "The code has access to the pandas library as 'pd' and the available DataFrames. "
+                "The code MUST assign the final numerical or string answer to a variable named 'final_result'."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "description": (
+                            "Valid Python code using pandas. Ensure the code is self-contained "
+                            "and does not require external imports other than pandas. "
+                            "Example: final_result = len(books[books[':year'] == 2000])"
+                        ),
+                    }
+                },
+                "required": ["code"],
+            },
+        }
+        self.tools = [
+            self.show_declaration,
+            self.filter_declaration,
+            self.code_declaration,
+        ]
 
-        self.tools = [self.show_declaration, self.filter_declaration]
+    def _execute_code(self, code: str):
+        execution = {
+            "books": self.local_datasets["books"],
+            "users": self.local_datasets["users"],
+            "orders": self.local_datasets["orders"],
+            "pd": pd,
+        }
+        exec(code, {}, execution)
+
+        return execution["final_result"]
 
     def _filter_data(
         self, dataset_name: str, column_name: str, value: str
@@ -71,6 +111,42 @@ class DataAgent:
         interaction = self.client.interactions.create(
             model="gemini-3.5-flash-lite",
             input=prompt,
+            system_instruction="""
+                                You are a data analysis assistant. You have access to the following pandas DataFrames.
+                                Use this schema to write valid queries and code. Note that 'books' columns start with a colon.
+
+                                1. 'books':
+                                - ':id' (int)
+                                - ':title' (string)
+                                - ':genre' (string)
+                                - ':year' (object)
+                                - ':publisher' (string)
+                                - ':unique_authors' (object)
+
+                                2. 'users':
+                                - 'id' (int)
+                                - 'name' (string)
+                                - 'address' (string)
+                                - 'phone' (string)
+                                - 'email' (string)
+                                - 'unique_user_id' (int)
+
+                                3. 'orders':
+                                - 'id' (int)
+                                - 'user_id' (int)
+                                - 'book_id' (int)
+                                - 'quantity' (int)
+                                - 'timestamp' (datetime)
+                                - 'shipping' (string)
+                                - 'currency' (string)
+                                - 'unit_price_USD' (float)
+                                - 'paid_price' (float)
+                                - 'day' (int)
+                                - 'month' (int)
+                                - 'year' (int)
+                                - 'date' (object)
+                                
+                                """,
             tools=self.tools,
         )
 
@@ -87,6 +163,24 @@ class DataAgent:
                 result_df = self._show_data(**args)
             case "filter_data":
                 result_df = self._filter_data(**args)
+            case "execute_code":
+                st.write("I've generated the query:")
+                st.code(args["code"])
+                result = self._execute_code(**args)
+                final_interaction = self.client.interactions.create(
+                    model="gemini-3.5-flash-lite",
+                    input=[
+                        {
+                            "type": "function_result",
+                            "name": fc_step.name,
+                            "call_id": fc_step.id,
+                            "result": [{"type": "text", "text": json.dumps(result)}],
+                        }
+                    ],
+                    tools=self.tools,
+                    previous_interaction_id=interaction.id,
+                )
+                return final_interaction.output_text
             case _:
                 return f"Unknown tool: {tool_name}"
 

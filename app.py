@@ -53,9 +53,7 @@ st.divider()
 st.subheader("Assistant Chat")
 st.markdown(
     """
-    Dynamically access source data for a given store and filter them.\n
-    Usability limited to displaying source datasets and basic filtering of a ["dataset_name", "column_name", "value"] structure.
-"""
+    Dynamically access source data for a given store and filter them."""
 )
 if prompt := st.chat_input("Ask for data (e.g., 'Show me orders from 2025')..."):
     with st.chat_message("user"):
@@ -63,4 +61,5 @@ if prompt := st.chat_input("Ask for data (e.g., 'Show me orders from 2025')...")
     with st.chat_message("assistant"):
         with st.status("Proccessing data...", state="running", expanded=True):
             st.write(agent.process_query(prompt))
-            st.status("Completed!", state="complete")
+            st.success("Done!")
+            st.balloons()
